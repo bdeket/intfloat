@@ -80,9 +80,26 @@ Ticks to work together with the @racket[intfloat-transform]
                (plot (function values)
                      #:x-min -inf.RIF #:x-max +inf.RIF))]
 
+@deftogether[[@defproc[(ordinal-ticks-layout [number Postive-Integer (ticks-default-number)]) ticks-layout/c]
+              @defthing[ordinal-ticks-format ticks-format/c]
+              @defproc[(ordinal-ticks [number Postive-Integer (ticks-default-number)]) ticks?]]]
+Similar as the @racket[infloat-ticks] above, but works completely in ordinal space. This has the advantage of working faster (no extreme big-integers or rationals) but the disadvantage that all supplied values need to be converted from/to ordinal space by the renderers and boundaries.
+
+@deftogether[[@defproc[(make-o1->o1 [F (-> Flonum Flonum)]) (-> Real Real)]
+              @defproc[(make-o1->r1 [F (-> Flonum Flonum)]) (-> Real Flonum)]
+              @defproc[(make-o2->o1 [F (-> Flonum Flonum)]) (-> Real Real)]
+              @defproc[(make-o2->r1 [F (-> Flonum Flonum)]) (-> Real Flonum)]]]
+Helpers to convert flonum-functions to be usable in ordinal space. Equivalent to:
+@codeblock{
+ (λ (x) (flonum->ordinal (F (ordinal*->flonum x))))
+ (λ (x) (F (ordinal*->flonum x)))
+ (λ (x y) (flonum->ordinal (F (ordinal*->flonum x) (ordinal*->flonum y))))
+ (λ (x y) (F (ordinal*->flonum x) (ordinal*->flonum y)))}
+
+
 @section{flstepper}
 @defmodule[intfloat/flstepper]
-@defproc[(3println-step [expr (list/c any)]) void]
+@defproc[(3println-step [expr (list/c Any)]) void]
 Given a symbolic expression, step through the evaluation and compare it with a bigfloat-evaluation.
 
 @examples[#:eval (parameterize ([sandbox-output 'string]
@@ -90,4 +107,11 @@ Given a symbolic expression, step through the evaluation and compare it with a b
                    (make-evaluator 'racket/base #:requires '("main.rkt")))
           (3println-step '(log (- (/ 100000 99999) (/ 100000 100001))))]
 
-->3 3println trans
+@defproc[(3println [expr (list/c Any)]) void]
+Given a symbolic expression, print it once once flonum space, once in bigfloat space and a third time showing the @racket[flulp-error] between the two.
+
+@defproc[(trans [expr (list/c Any)]) (list/c Any)]
+Given a symbolic expression, convert all numbers in it to a representation that can be used by @racket[3println]
+
+@defproc[(->3 [f Real] [b Bigfloat (bf f)]) ?]
+Convert a number to representation that can be used by the @racket[3println]

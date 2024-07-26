@@ -93,3 +93,90 @@
 
 (define (intfloat-ticks #:number [N : Positive-Integer (ticks-default-number)]) : ticks
   (ticks (intfloat-ticks-layout N) intfloat-ticks-format))
+
+
+(define (ordinal-ticks-layout [N : Positive-Integer (ticks-default-number)]) : Ticks-Layout
+  (λ (MIN MAX)
+    (let ([MIN (min MIN MAX)]
+          [MAX (max MIN MAX)])
+      (let ([MIN (ordinal*->real MIN)]
+            [MAX (ordinal*->real MAX)])
+        (define (chk [x : Real]) : Exact-Rational
+          (cond
+            [(exact? x) x]
+            [else
+             (define F (fl x))
+             (cond
+               [(flnan? F) (if (or (< MIN 0) (< MAX 0)) -nan.RIF +nan.RIF)]
+               [(= F +inf.0) +inf.RIF]
+               [(= F -inf.0) -inf.RIF]
+               [else (inexact->exact F)])]))
+        (let ([MIN (chk MIN)]
+              [MAX (chk MAX)])
+          (define (DO1 [MIN : Nonnegative-Exact-Rational]
+                       [MAX : Nonnegative-Exact-Rational]) : (Listof pre-tick)
+            (define M- (max +min.RIF MIN))
+            (define M+ (max +min.RIF MAX))
+            (if (< (/ M+ M-) 2)
+                ((linear-ticks-layout #:number N #:base 10) MIN MAX)
+                (let ([A ((log-ticks-layout #:number N #:base 10) M- M+)])
+                  (if (= 0 MIN) (cons (pre-tick 0 #t) (cdr A)) A))))
+          (map (λ ([t : pre-tick])
+                 (struct-copy pre-tick t [value (real->ordinal* (pre-tick-value t))]))
+               (cond
+                 [(and (<= 0 MIN) (<= 0 MAX)) ;; (< 0 MIN MAX)
+                  (DO1 MIN MAX)]
+                 [(and (<= MIN 0) (<= MAX 0))
+                  (foldl (λ ([t : pre-tick][L : (Listof pre-tick)]) : (Listof pre-tick)
+                           (cons (struct-copy pre-tick t [value (- (pre-tick-value t))])
+                                 L))
+                         '()
+                         (DO1 (abs MAX) (abs MIN)))]
+                 [else
+                  (assert MAX positive?)
+                  (assert MIN negative?)
+                  (define d (/ MAX (- MIN)))
+                  (define A
+                    (cond
+                      [(<= 1 d)
+                       (define D (exact-round d))
+                       (define Q (/ (max 1 (- N 3)) (+ D 1)))
+                       (define R (exact-ceiling (* D Q)))
+                       ((log-ticks-layout #:number (max 1 R) #:base 10) +min.0 (abs MAX))]
+                      [else
+                       (define D (exact-round (/ d)))
+                       (define Q (/ (max 1 (- N 3)) (+ D 1)))
+                       (define R (exact-ceiling (* D Q)))
+                       ((log-ticks-layout #:number (max 1 R) #:base 10) +min.0 (abs MIN))]))
+                  `(,@(for*/list : (Listof pre-tick)
+                        ([t (in-list (reverse A))]
+                         [T (in-value (- (pre-tick-value t)))])
+                        (struct-copy pre-tick t [value T]))
+                    ,(pre-tick 0 #t)
+                    ,@(filter (λ ([t : pre-tick]) (<= (pre-tick-value t) MAX)) A))])))))))
+
+(define ordinal-ticks-format : Ticks-Format
+  (λ (MIN MAX pre)
+    (map (λ ([t : pre-tick])
+           (define T (ordinal*->flonum (pre-tick-value t)))
+           (cond
+             [(flnan? T) "nan"]
+             [(= T -inf.0) "-inf"]
+             [(= T +inf.0) "+inf"]
+             [(= T 1) "1"]
+             [(= T 0) "0"]
+             [(= T -1) "-1"]
+             [else (~r T #:notation 'exponential)]))
+         pre)))
+
+(define (ordinal-ticks #:number [N : Positive-Integer (ticks-default-number)]) : ticks
+  (ticks  (ordinal-ticks-layout N) ordinal-ticks-format))
+
+(define (make-o1->o1 [F : (-> Flonum Flonum)]) : (-> Real Real)
+  (λ ([x : Real]) (flonum->ordinal (F (ordinal*->flonum x)))))
+(define (make-o1->r1 [F : (-> Flonum Flonum)]) : (-> Real Flonum)
+  (λ ([x : Real]) (F (ordinal*->flonum x))))
+(define (make-o2->o1 [F : (-> Flonum Flonum Flonum)]) : (-> Real Real Real)
+  (λ ([x : Real][y : Real]) (flonum->ordinal (F (ordinal*->flonum x) (ordinal*->flonum y)))))
+(define (make-o2->r1 [F : (-> Flonum Flonum Flonum)]) : (-> Real Real Flonum)
+  (λ ([x : Real][y : Real]) (F (ordinal*->flonum x) (ordinal*->flonum y))))
