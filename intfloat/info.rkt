@@ -19,6 +19,7 @@
   (list "racket-doc"
         "typed-racket-doc"
         "plot-doc"
+        "plot-gui-lib"
         "math-doc"
         "sandbox-lib"
         "scribble-lib"

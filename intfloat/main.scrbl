@@ -1,7 +1,11 @@
 #lang scribble/manual
 
-@(require (for-label racket/base math/flonum plot "main.rkt"
-                     (only-in typed/racket/base Integer Exact-Rational Positive-Integer Flonum Nonnegative-Integer))
+@(require (for-label racket/base
+                     math/flonum
+                     plot
+                     (only-in typed/racket/base Integer Exact-Rational Positive-Integer Flonum Nonnegative-Integer)
+                     "main.rkt"
+                     )
           scribble/examples
           (only-in scribble/eval interaction)
           racket/sandbox)
