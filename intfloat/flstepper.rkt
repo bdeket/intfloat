@@ -49,7 +49,7 @@
                 [(+) 3+] [(-) 3-] [(*) 3*] [(/) 3/]
                 [(abs) 3abs] [(sgn) 3sgn]
                 [(sqrt) 3sqrt] [(hypot) 3hypot] [(sqrt1pm1) 3sqrt1pm1]
-                [(log) 3log] [(log2) 3log2] [(log1p) 3log1p] [(log1pmx) 3log1pmx]
+                [(log) 3log] [(log2) 3log2] [(log1p) 3log1p] [(log1pmx) 3log1pmx][(lg1+) 3lg1+][(lg1-) 3lg1-]
                 [(exp) 3exp] [(exp2) 3exp2] [(expm1) 3expm1] [(expsqr) 3expsqr] [(gauss) 3gauss] [(exp1p) 3exp1p]
                 [(expt) 3expt] [(expt1p) 3expt1p] [(expt+) 3expt+]
                 [(sin) 3sin] [(cos) 3cos] [(tan) 3tan] [(asin) 3asin] [(acos) 3acos] [(atan) 3atan]
@@ -79,6 +79,9 @@
 ;log10
 (define 3log1p (3f fllog1p bflog1p))
 (define 3log1pmx (3f fllog1pmx (λ (b) (bf- (bflog1p b) b))))
+
+(define 3lg1+ (3f lg1+ (λ (b) (bflog1p (bfexp b)))))
+(define 3lg1- (3f lg1- (λ (b) (bflog1p (bf- (bfexp b))))))
 
 (define 3exp (3f flexp bfexp))
 (define 3exp2 (3f flexp2 bfexp2))
